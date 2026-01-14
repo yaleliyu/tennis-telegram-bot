@@ -1,6 +1,6 @@
 import asyncio
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
 from telegram import Bot
 
@@ -8,7 +8,7 @@ from telegram import Bot
 BOT_TOKEN = "8234906468:AAF4uOVGEcgOTMID9mV4hy7GSR31p3OiDGA"
 CHAT_ID = 7627468013
 
-URL = "https://bookings.better.org.uk/location/islington-tennis-centre/tennis-court-indoor/2026-01-17/by-time"
+URL = "https://bookings.better.org.uk/location/islington-tennis-centre/tennis-court-indoor/"
 
 CHECK_INTERVAL = 600  # 秒（10分钟）
 
@@ -19,16 +19,30 @@ TIME_END = "17:00"
 bot = Bot(token=BOT_TOKEN)
 last_hash = None
 
+def next_weekend_dates():
+    """返回下一个周六和周日的日期列表"""
+    today = datetime.today()
+    week_day = today.weekday()
+
+    saturday = None
+    result = [(today + timedelta((6 - week_day) % 7)).strftime("%Y-%m-%d")]
+    if week_day <= 5:
+        saturday = (today + timedelta((5 - week_day) % 7)).strftime("%Y-%m-%d")
+        result.append(saturday)
+
+    return result
+
 
 def time_in_range(t):
     return TIME_START <= t <= TIME_END
 
 
-async def fetch_slots():
+async def fetch_slots(date_str:str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        await page.goto(URL, timeout=60000)
+
+        await page.goto(URL+date_str+"/by-time", timeout=60000)
         await page.wait_for_timeout(5000)
 
         slots = []
@@ -66,13 +80,14 @@ async def main():
 
     while True:
         try:
-            slots = await fetch_slots()
-            if slots:
-                h = hashlib.md5(",".join(slots).encode()).hexdigest()
-                if h != last_hash:
-                    await notify(slots)
-                    last_hash = h
-            print(datetime.now(), "checked")
+            for d in next_weekend_dates():
+                slots = await fetch_slots(d)
+                if slots:
+                    h = hashlib.md5(",".join(slots).encode()).hexdigest()
+                    if h != last_hash:
+                        await notify(slots)
+                        last_hash = h
+                print(datetime.now(), "checked")
         except Exception as e:
             print("Error:", e)
 
@@ -80,6 +95,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    next_weekend_dates()
     asyncio.run(main())
 
 
