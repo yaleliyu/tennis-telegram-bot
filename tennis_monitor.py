@@ -3,12 +3,15 @@ import hashlib
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
 from telegram import Bot
+from bs4 import BeautifulSoup
+
 
 # ================== 配置区 ==================
 BOT_TOKEN = "8234906468:AAF4uOVGEcgOTMID9mV4hy7GSR31p3OiDGA"
 CHAT_ID = 7627468013
 
 URL = "https://bookings.better.org.uk/location/islington-tennis-centre/tennis-court-indoor/"
+
 
 CHECK_INTERVAL = 600  # 秒（10分钟）
 
@@ -36,7 +39,6 @@ def next_weekend_dates():
 def time_in_range(t):
     return TIME_START <= t <= TIME_END
 
-
 async def fetch_slots(date_str:str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -48,8 +50,20 @@ async def fetch_slots(date_str:str):
         slots = []
 
         cards = await page.query_selector_all("button")
+        content =  await page.content()
+        soup = BeautifulSoup(content, "html.parser")
+
+        slots = soup.select('div[class*="ClassTime"]')
+        spaces = soup.select('span[class*="BookWrap"]')
+
+        if len(slots) == len(spaces) and len(slots) > 0:
+            for i in range(len(slots)):
+                print(slots[i] + ": " + spaces[i])
+
+
         for c in cards:
             text = (await c.inner_text()).strip()
+            print(text)
             if "Book" in text or "Available" in text:
                 # 简单时间提取（Better 页面一般包含时间）
                 for part in text.split():
@@ -95,7 +109,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    next_weekend_dates()
     asyncio.run(main())
 
 
