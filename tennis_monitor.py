@@ -62,6 +62,7 @@ async def notify(slots):
 
 async def main():
     global last_hash
+    await notify(['test_head', '1'])
 
     while True:
         try:
@@ -79,7 +80,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    await notify(['test1', 'teset2'])
     asyncio.run(main())
 
 
