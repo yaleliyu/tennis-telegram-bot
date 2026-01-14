@@ -79,7 +79,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    notify(['test1', 'teset2'])
+    await notify(['test1', 'teset2'])
     asyncio.run(main())
 
 
