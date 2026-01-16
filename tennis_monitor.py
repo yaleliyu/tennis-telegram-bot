@@ -114,7 +114,7 @@ async def main():
                     if h != last_hash:
                         await notify(d, slots)
                         last_hash = h
-                print(datetime.now(), "checked")
+                print(datetime.now(), f"checked for [{d}]")
                 await asyncio.sleep(30)
         except Exception as e:
             print("Error:", e)
