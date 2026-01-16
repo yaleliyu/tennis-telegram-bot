@@ -84,6 +84,7 @@ async def fetch_slots(date_str: str):
 
                 if spaces_n > 0 and start_time > "12:00":
                     available.append((spaces_n, date, start_time, end_time))
+                    print(f"found available slot [{date_str}]: {start_time} - {end_time}")
 
         await browser.close()
         return sorted(set([a[-2] + " - " + a[-1] for a in available]))
